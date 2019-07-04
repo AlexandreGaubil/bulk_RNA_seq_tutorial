@@ -1,0 +1,45 @@
+#!/bin/bash
+
+### qsub file.name to run from anywhere
+
+#PBS -N tophat_SNK015
+#PBS -S /bin/bash
+#PBS -l walltime=24:00:00
+#PBS -l nodes=1:ppn=8
+#PBS -l mem=32gb
+#PBS -o /gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/tophat_SNK015/test.out
+#PBS -e /gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/tophat_SNK015/test.err
+
+#PATH=/apps/build/bowtie2-2.3.4.3:$PATH
+#export $PATH
+#echo $PATH
+
+
+module load gcc/6.2.0
+module load bowtie2/2.3.4.3
+module load tophat/2.1.1
+
+s1=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/MMc-1_S1_L005_R1_001_merged.fastq.gz
+s2=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/MMc-2_S2_L005_R1_001_merged.fastq.gz
+s3=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/MMc-3_S3_L005_R1_001.fastq_merged.gz
+s4=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/MMc-4_S4_L005_R1_001_merged.fastq.gz
+s5=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/MMc-5_S5_L005_R1_001_merged.fastq.gz
+s6=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/MMc-6_S6_L005_R1_001_merged.fastq.gz
+s7=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/MMc-7_S7_L005_R1_001_merged.fastq.gz
+s8=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/MMc-8_S8_L005_R1_001_merged.fastq.gz
+s9=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/MMc-9_S9_L005_R1_001_merged.fastq.gz
+s10=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/MMc-10_S10_L005_R1_001_merged.fastq.gz
+s11=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/MMc-11_S11_L005_R1_001_merged.fastq.gz
+s12=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/MMc-12_S12_L005_R1_001_merged.fastq.gz
+
+
+outputFolder=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/tophat_SNK015
+log=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/tophat_SNK015/tophat_SNK015.log
+
+bowtieIndexes=/gpfs/data/mcnerney-lab/mcnerney/reference/bowtie_indexes/mm10/Sequence/Bowtie2Index/genome
+
+tophat2 -p 8 -o $outputFolder $bowtieIndexes $s1 $s2 $s3 $s4 $s5 $s6 $s7 $s8 $s9 $s10 $s11 $s12  2> $log
+
+
+
+
