@@ -1,7 +1,7 @@
 # detailed steps of RNA seq
 This readme file contains all the code and comments to perform a complete bulk RNA seq up until featureCounts. For the steps after featureCounts, namely DeSeq2 and GO/GSEA analysis, please see the R markdown files in this folder. Note all of the steps below are written in shell scripts. Below are the main codes of each steps for educational purposes, see the script for each step for complete ready-to-run codes.
 
-## FastQC
+## 1.FastQC
 
 
 ### specifies the path to input files:
@@ -26,7 +26,7 @@ log=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/fastqc/fastqc.log
 fastqc -t 8 -o $out $s1 $s2 $s3 $s4 $s5 $s6 $s7 $s8 $s9 $s10 $s11 $s12 2> $log
 
 
-## STAR 
+## 2.STAR 
 
 ### first, make a customized reference genome for STAR aligner.This only needs to be done once for each genome. You can also find ready-to-use ref genomes on STAR websites. In this experiment we constructed a mm10 reference genome which can differentiate CUX1 vs Casp.
 
@@ -54,7 +54,7 @@ STAR --runThreadN 8 \
 
 done
 
-## SAMTools
+## 3.SAMTools(optional for differential expression analysis)
 
 ### read in samples
 file_path=/gpfs/data/mcnerney-lab/liuweihan/bulk_RNA/SNK015/merged/tophat_SNK015
@@ -74,7 +74,7 @@ samtools view -@ 8 -bh -q 30 $sample_srt_id.sorted.bam -o $sample_srt_id.sorted.
 done
 
 
-## featureCounts
+## 4.featureCounts
 * this sequencing experiment is strand specific, so we specified -s 1 as the forward strand. If you don't know this information,run    unspecified strand(default, you don't need to put anything for -s) and run -s 1 , -s 2 respectively, if it's unstanded,you should see the    number of mapped genes to be 50% vs 50% for reverse and forward, if not, then it is stranded.
 
 cd /gpfs/data/mcnerney-lab/liuweihan/bulk_RNA/SNK015/merged/star
