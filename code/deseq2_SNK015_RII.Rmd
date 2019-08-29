@@ -1,0 +1,439 @@
+---
+title: "DeSeq2_pipeline"
+author: "Weihan Liu"
+date: "28/07/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+##data loading and initial set up
+
+Load necessary libraries. 
+
+```{r}
+library(DESeq2)
+library(RColorBrewer) #for plotting
+library(pheatmap) #for plotting
+library(tidyverse)# for data wrangling
+```
+
+
+
+
+Read in Count Matrix. 
+Note that reading in the data as .txt format is the easiest. Because the sample names and gene names need to be the colnames and rownames of the matrix, respectively. .txt files automatically satisfy this, while .csv doesn't. If you receive your count matrix as a csv file, you can just save it as a .txt file.  We import raw rather than normalized count because DESeq2 will perform internal normalization itself, so it requires raw counts as input.
+```{r pressure, echo=FALSE}
+raw_count <- read.table("/Users/weihan/Desktop/Research/Bulk_RNA_seq/SNK015_SK_WL/featureCounts_result/forward_counts_raw.txt",stringsAsFactors = FALSE) #comes from Rsubreads
+#clean up and reformat the count matrix
+raw_count <- raw_count[-1,-c(2:6)] 
+
+genenames <- raw_count[[1]]
+#rownames(raw_count) <- genenames
+raw_count <- raw_count[-1]
+colnames(raw_count) <- c("Low_RII_2","Mid_RII_2","Ren_RII_2","Low_MEP_1","Mid_MEP_1","Ren_MEP_1","Low_MEP_2","Mid_MEP_2","Ren_MEP_2","Low_RII_1","Mid_RII_1","Ren_RII_1")
+
+raw_count <- as.data.frame(apply(raw_count, 2, as.numeric))  # Convert all variable types to numeric
+sapply(raw_count, class)  
+rownames(raw_count) <- genenames
+str(raw_count)
+head(raw_count)#examing raw count matrix
+
+#here we get rid of Rik geens, which are unassigned mouse genes. First, create an intermediate variable called raw_count_test to be our safe playgroud
+raw_count_test <- raw_count
+#then create a gene name column, this is because any dplyr function will automatically delete rownames, which currently store our gene names.
+raw_count_test <- raw_count_test %>% rownames_to_column(var = "gene")
+#arrange by gene name, 
+raw_count_test <- raw_count_test %>% arrange(gene)
+#get rid of all the Rik genes
+raw_count_test <- raw_count_test[-c(1:1706),]
+#assign the edited table back to raw_count
+raw_count <- raw_count_test
+raw_count <- remove_rownames(raw_count)
+raw_count <- raw_count %>% column_to_rownames(var = "gene")
+#seperate the raw_count for MEP and RII
+raw_count_RII <- raw_count[c(1:3,10:12)]
+```
+
+create your metadata file
+```{r}
+
+genotype <- c("low","mid","ren","low","mid","ren")
+day_collection_RII <- c("2","2","2","1","1","1")
+#+ other optional columns
+#combines the vectors into a dataframe
+
+meta_data_RII <- data.frame(genotype,day_collection_RII)
+
+#add sample names in a vextor as row names. note that the row names in meta data need to be in the same order as the column/sample names in count matrix
+row.names(meta_data_RII) <- c("Low_RII_2","Mid_RII_2","Ren_RII_2","Low_RII_1","Mid_RII_1","Ren_RII_1")
+
+meta_data_RII
+```
+
+
+
+
+
+
+
+plot the distribution of raw read counts, you can plot for each sample, or all sample combined
+```{r}
+# library(ggplot2)
+# ggplot(raw_count_RII) + geom_histogram(aes(x = Low_RII_2), stat = "bin", bins= 200) + xlab("Low_RII_2") + ylab("raw count") 
+# 
+# #caculate sequencing depth and fold coverage for MEP librarries
+# seq_depth_MEP <- c()
+# fc_MEP <- c()
+# for (i in 1:ncol(raw_count_MEP)){
+#         seq_depth_MEP[i] <- sum(raw_count_MEP[i])
+#         seq_depth_MEP
+#         fc_MEP[i] <- round(seq_depth_MEP[i]*50/100000000, digits = 1)
+#         fc_MEP
+# }
+# 
+# 
+# #visualize the sequencing depth and fold coverage
+# MEP_libary <- data.frame(cbind(c("Low_MEP_1","Mid_MEP_1","Ren_MEP_1","Low_MEP_2","Mid_MEP_2","Ren_MEP_2"),seq_depth_MEP,fc_MEP),stringsAsFactors = FALSE)
+# colnames(MEP_libary) <- c("library","raw_counts","fold_coverage")
+# MEP_libary$raw_counts <- as.numeric(MEP_libary$raw_counts)
+# MEP_libary$fold_coverage <- as.numeric(MEP_libary$fold_coverage)
+# 
+# 
+# ggplot(MEP_libary, aes(x = library, y = raw_counts)) + geom_col(fill="slateblue") + geom_text(aes(label = MEP_libary$fold_coverage, vjust = -0.2)) + ggtitle("MEP: sequencing depth and fold coverage")
+
+```
+
+check the row names in your metadata is in the sampel order as column names in your count matrix, as this is the order DESeq2 corresponds each sample, if this returns FALSE, you need to go back and make the right order.
+```{r}
+all(rownames(meta_data_RII) == colnames(raw_count_RII))
+
+```
+
+
+## DESeq2 analysis
+
+First, create DESeq2 object which contains a series of information including your raw counts, metadata and the design formula, specifying which variable in the meta data we want to test for differential expression analysis. you can use one or multiple variables(if testing for multiple, just type "variable1 + variable2 ...")
+
+Create Deseq object for MEP and RII respectively
+```{r}
+
+dds_RII <- DESeqDataSetFromMatrix(countData = raw_count_RII,colData = meta_data_RII,design = ~ genotype + day_collection_RII)
+nrow(dds_RII)
+dds_RII <- dds_RII[rowSums(counts(dds_RII)) > 1,]
+nrow(dds_RII)
+
+
+```
+
+next, normalize raw read counts. We perform normalization because there are several source of bias in raw read counts that will skew the RNA quantification
+    1.library size: samples are are sequenced deeper have more reads
+    2.gene length: longer genes have more reads aligned
+    3.outlier genes: highly expressed DE genes and highly expressed gene from PCR amplification bias will mask other genes
+Note that if we just divide raw reads by total number of reads, you cannot remove the bias from 3. So DESeq2 uses a method that adjust the #of reads based on library size and is resistant to ourlier genes.
+```{r}
+
+#RII
+dds_RII <- estimateSizeFactors(dds_RII) #estimate scaling factors and reaasign back to the DESeq2 object
+sizeFactors(dds_RII)   
+
+normalized_counts_RII <- counts(dds_RII,normalized = TRUE) #extract the normalized counts from DESeq2 object
+View(normalized_counts_RII)
+```
+
+
+Next, perform unsupervised hierarchical clustering and PCA analysis as quality control steps. Here, we want to see similar conditions and biological replicates cluster together, if not, there might be batch effect. Note vst transformation is only used for PCA and unsupervised clustering, vst and its alternative rlog are not designed for DE analysis, for DE analysis we use DeSeq function
+```{r}
+
+#RII
+vsd_RII <- vst(dds_RII, blind = TRUE)#log transformed the normalzied count to improve the visualization of clustering, DESeq2 uses a variance stabilization transformation that performs log transformation which moderates variance across mean
+vsd_mat_RII <- assay(vsd_RII) #extract the log transformed normalized count from the DESeq2 object
+vsd_cor_RII <- cor(vsd_mat_RII) #compute the correlation values
+View(vsd_cor_RII)
+pheatmap(vsd_cor_RII, annotation = select(meta_data_RII,genotype,day_collection_RII)) #plot the correlation heatmap, specifying the variables in the metadata you want to visualize.You caninclude as many variables as possible in your meatdata, which you think might be sources for batch effect
+```
+
+alternatively for unsupervised clustering, let's calculate the sample-sample distance
+```{r}
+
+#RII
+sampleDists <- dist(t(assay(vsd_RII)))
+sampleDists
+sampleDistMatrix <- as.matrix(sampleDists)
+rownames(sampleDistMatrix) <- rownames(vsd_RII@colData)
+colnames(sampleDistMatrix) <- rownames(vsd_RII@colData)
+colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
+pheatmap(sampleDistMatrix,
+         clustering_distance_rows = sampleDists,
+         clustering_distance_cols = sampleDists,
+         col = colors)
+```
+
+
+Next, perform PCA as the second step of QC to further validate the quality of the data
+You can plot PCA for all sorts of variables of interests, as long as you record those variables and include them in the meta data, for example, genotype, day of experiments, technicians etc.. This is the most important way to spot batch effect
+```{r}
+
+
+#RII
+pcaData_RII <- plotPCA(vsd_RII, intgroup = c("genotype","day_collection_RII"),returnData = TRUE)
+percentVar <- round(100 * attr(pcaData_RII, "percentVar"))
+ggplot(pcaData_RII, aes(PC1, PC2, color=genotype, shape=day_collection_RII)) +
+  geom_point(size=3) +
+  xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+  ylab(paste0("PC2: ",percentVar[2],"% variance")) + 
+  coord_fixed() +
+  ggtitle("RII")
+
+```
+
+Here, if you identify any outlier samples, remove them and recreate the DESeq2 object.
+
+
+
+Next, perform differrential expression analysis using DESeq function
+
+This function performs a default analysis through the steps:
+
+    1.estimation of size factors: estimateSizeFactors
+
+    2.estimation of dispersion: estimateDispersions
+
+    3.Negative Binomial GLM fitting and Wald statistics: nbinomWaldTest
+
+
+```{r}
+ #run the deseq analysis on your DESeq2 object containingb RAW COUNTS
+dds_RII <- DESeq(dds_RII)
+```
+
+Next, examine how well the data fit our model. DESeq2 performs differential expression analysis by examine if the difference of a gene's inter-sample variation is significant given the intra-sample variation.
+by examining log2 fold change: log2(treatment_mean/control_mean) != 0
+For RNA-seq, a gene's expression variance is expected to increase with its mean expression, and we need to test of this relationship holds
+```{r}
+
+#RII
+mean_counts_RII <- apply(raw_count_RII,1,mean) #calculate the mean for each row/gene. 1 here designates the function mean to be applied by row
+variance_counts_RII <- apply(raw_count_RII,1,var)#calculate the variance for each row/gene
+
+df_RII <- data.frame(mean_counts_RII,variance_counts_RII) #create a data frame with mean and variance for each gene for plotting
+ggplot(df_RII) +
+        geom_point(aes(x=mean_counts_RII, y=variance_counts_RII)) + 
+        scale_y_log10() +
+        scale_x_log10() +
+        xlab("Mean counts per gene") +
+        ylab("Variance per gene")
+```
+
+We should see as mean increases, variance should also increase
+
+Next, plot the dispersion of the data. DESeq2 model the dispersion as Var=μ+α∗μ^2   μ is mean and α is dispersion. So dispersion is positively correlated with variance and ngatively correlated with mean.
+```{r}
+#plot dispersion estimates on the DESeq object 
+plotDispEsts(dds_RII)
+```
+
+Each blackdot is a gene with its mean and dispersion values. We expect to see dispersion values decreases with increasing mean. And the genes should cluster around the red maximum likelihood line
+
+
+Next, we analyze for DE gene, and the analysis will be splitted into two parts, MEP first, and then RII second.
+Now that we examined the fitness of our model, it's time to extract DE genes, you can add LFC threshold here in the results() function by  lfcThreshold argument
+
+
+
+DE analysis for RII
+analyze the DE genes between Low and Ren
+```{r}
+#MEP
+RII_result <- results(dds_RII,contrast = c("genotype","low","ren"),alpha = 0.1) #specify your significant threshold alpha level, you need to specify the way of contrast: c("condition factor/variable to contrast","level to compare","baseline level")
+RII_result 
+summary(RII_result)
+
+#export the result table for exploration
+write.csv(RII_result,"/Users/weihan/Desktop/Research/Bulk_RNA_seq/RII_DE_result.csv",sep = " ")
+
+```
+
+To improve the estimate of LFC, we use shrinkage. This method helps to estimate the LFC of genes with limited information, to generates better LFC estimates
+
+Examine the DE genes via MA plot. The MA plot shows the mean of the normalized counts vs the log fold change(LFC). The dots represent all teh genes, and DE genes are the red dots.
+```{r}
+RII_result<- lfcShrink(dds_RII, 
+            contrast=c("genotype", "low", "ren"),
+            res=RII_result)
+plotMA(RII_result,ylim = c(-3,3)) #you can specify the range of LFC here make the plot look nicer
+
+```
+
+
+
+Explore the DESeq2 result table and extract DE genes. We will us the padj as our p value, which is the p value adjusted for multiple hypothesis testing using Benjamini Hochberg method(FDR ajusted P value, which help to decrease type I error/false positives)
+```{r}
+mcols(RII_result) #gives the content of the result table
+head(RII_result)
+summary(RII_result)
+
+
+```
+
+Next, annotate the gene names based on the ensemble gene id(currently the row names in our count table is still ensemble gene id)
+```{r}
+# #first, install the annotables package through bioconductor
+# if (!requireNamespace("BiocManager", quietly = TRUE))
+#     install.packages("BiocManager")
+# BiocManager::install("remotes")
+# BiocManager::install("stephenturner/annotables")
+# library(annotables)
+# 
+# grcm38 #examine the mouse genome annotation from ensemble
+# 
+# smoc2_result_all <- data.frame(smoc2_result) %>% rownames_to_column(var = "ensgene") %>% left_join(x = smoc2_result_all, y =grcm38[,c("ensgene", "symbol", "description")], by = "ensgene") #create a column ensgene which contains the ensemble gene names in our result table, and attach ensgene names, symbol and descrition column to our result table
+# View(smoc2_result_all)
+
+```
+
+
+Next, extract the DE genes with gene names in place and arrange them by significance level
+```{r}
+
+RII_result_all <- data.frame(RII_result)
+RII_result_sig <- subset(RII_result_all,padj < 0.1)
+
+#tidyverse functions such as arrange doesn't preserve rownames, which is genenames here that we want to preserve, so let's convert the rownames to an actual column here
+RII_result_sig <- RII_result_sig %>% tibble::rownames_to_column(var = "gene")
+View(RII_result_sig)
+
+#extract the DE genes sorted by log2foldchange from smallest(down-regulated in low vs ren) to largest(up regulated in low vs ren)
+RII_result_sig <- RII_result_sig %>% arrange(log2FoldChange)
+RII_result_sig
+```
+
+
+Lastly, let's explore a series of visualization for our results
+
+Expression heatmap, which plot the normalized expression level of the genes
+```{r}
+# Subset normalized counts to significant genes 
+sig_norm_counts_RII <- normalized_counts_RII[RII_result_sig$gene, ]
+
+# Choose a color palette from RColorBrewer
+library(RColorBrewer) 
+
+heat_colors <- brewer.pal(6, "YlOrRd")
+
+# Run pheatmap
+pheatmap(sig_norm_counts_RII, 
+         color = heat_colors, 
+         cluster_rows = T, 
+         show_rownames = F,
+         annotation = select(meta_data_RII, genotype), 
+         scale = "row")
+
+
+```
+
+
+plot count result for any gene of interest
+```{r}
+install.packages("ggbeeswarm")
+library(ggbeeswarm)
+#plotCounts(dds_MEP, gene = "Cux1", intgroup=c("genotype"))
+
+#visualize normalized Cux1 Count
+geneCount_Cux1 <- plotCounts(dds_RII, gene = "Cux1", intgroup = "genotype",
+                         returnData = TRUE)
+ggplot(geneCount_Cux1, aes(x = genotype, y = count, color = day_collection_RII, group = day_collection_RII)) +
+  scale_y_log10() + geom_point(size = 3) + geom_line() + ggtitle("normalized Cux1 count visualization ")
+
+#Visualize nornalized Pik3ip1 count
+geneCount_Pik3ip1 <- plotCounts(dds_RII, gene = "Pik3ip1", intgroup = "genotype",
+                         returnData = TRUE)
+ggplot(geneCount_Pik3ip1, aes(x = genotype, y = count, color = day_collection_RII, group = day_collection_RII)) +
+  scale_y_log10() + geom_point(size = 3) + geom_line() + ggtitle("normalized Pik3ip1 count visualization")
+
+
+geneCount_Casp <- plotCounts(dds_RII, gene = "Casp", intgroup = "genotype",
+                         returnData = TRUE)
+ggplot(geneCount_Casp, aes(x = genotype, y = count, color = day_collection_RII, group = day_collection_RII)) +
+  scale_y_log10() + geom_point(size = 3) + geom_line() + ggtitle("normalized Casp count visualization")
+
+```
+
+
+
+
+Volcano plot using the enhanced volcano function, which shows fold change to adjusted p values for all genes
+For the most basic volcano plot, only a single data-frame, data-matrix, or tibble of test results is required, containing point labels, log2FC, and adjusted or unadjusted P values. The default cut-off for log2FC is >|2|; the default cut-off for P value is 10e-6.
+```{r, fig.width=3, fig.height=3.5}
+#   if (!requireNamespace('BiocManager', quietly = TRUE))
+#     install.packages('BiocManager')
+#     BiocManager::install('EnhancedVolcano')
+# devtools::install_github('kevinblighe/EnhancedVolcano')    
+# library(EnhancedVolcano)    
+# library(ggrepel)
+
+
+
+
+
+EnhancedVolcano(RII_result,
+    lab = rownames(RII_result),
+    x = 'log2FoldChange',
+    y = 'pvalue',
+    FCcutoff = 1.5,
+    title = 'Cux1 Low versus Ren',
+    xlim = c(-3.5, 5))
+    
+    
+    
+# Obtain logical vector regarding whether padj values are less than 0.05 
+# RII_result_all <- RII_result_all %>% tibble::rownames_to_column(var = "gene")
+# RII_result_all <- RII_result_all %>% mutate(threshold = padj < 0.1)
+# 
+# # Volcano plot
+# ggplot(RII_result_all) +
+#         geom_point(aes(x = log2FoldChange, y = -log10(padj), 
+#                    color = threshold)) +
+#         xlab("log2 fold change") + 
+#         ylab("-log10 adjusted p-value") +
+#         ylim(0,10) +
+#         theme(legend.position = "none",
+#               plot.title = element_text(size = rel(1.5), hjust = 0.5),
+#               axis.title = element_text(size = rel(1.25))) 
+       
+```
+
+Expression plot of top 20 genes across samples/conditions
+```{r}
+#extract the top 20 genes
+top_20_RII <- data.frame(sig_norm_counts_RII)[1:20, ] 
+top_20_RII <- top_20_RII %>% tibble::rownames_to_column(var = "gene")
+#gather to a table for plotting
+top_20_RII <- gather(top_20_RII, 
+                 key = "samplename", 
+                 value = "normalized_counts", 
+                 2:7)
+#join your count table with meta data for labelling
+top_20_RII <- inner_join(top_20_RII,
+                     rownames_to_column(meta_data_RII, var = "samplename"),
+                     by = "samplename")
+#create the plot
+ggplot(top_20_RII) +
+        geom_point(aes(x = gene, y = normalized_counts, color = genotype)) +
+        scale_y_log10() +
+        xlab("Genes") +
+        ylab("Normalized Counts") +
+        ggtitle("Top 20 Significant DE Genes") +
+        theme_bw() +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+        theme(plot.title = element_text(hjust = 0.5))
+```
+
+
+
+
+
