@@ -89,4 +89,9 @@ featureCounts -a /gpfs/data/mcnerney-lab/liuweihan/cellranger_ref_genomes/mm10ge
 *.sam
 ```
 
+## 5.Differential Expression analysis using DeSeq2
+**see the two .Rmd file for details**
+
+## 6.GSEA/GO analysis
+**see the fgsea file for detail**
 
