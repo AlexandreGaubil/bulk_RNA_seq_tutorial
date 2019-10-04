@@ -6,6 +6,8 @@ Always start the script by entering the directory you wish the script to be exec
 
 The directory your output file is written to needs to exist! It will not be created for you when you run the script
 
+peroids "." slashes "/" and dashes "-" cause the biggest crashes
+
 pdw = current working directory
 qsub = submit
 qstat = status (watch qstat makes it a running log)
