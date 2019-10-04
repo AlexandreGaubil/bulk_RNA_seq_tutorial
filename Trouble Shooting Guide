@@ -1,0 +1,13 @@
+Here are tips and tricks for your trouble shooting!
+
+First check the error file, then the output file, then the log
+
+Always start the script by entering the directory you wish the script to be executed in
+
+The directory your output file is written to needs to exist! It will not be created for you when you run the script
+
+pdw = current working directory
+qsub = submit
+qstat = status (watch qstat makes it a running log)
+qdel and job ID# = kill command 
+
