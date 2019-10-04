@@ -1,34 +1,23 @@
 #PBS -S /bin/bash
+
 #PBS -l walltime=8:00:00
 #PBS -l nodes=1:ppn=4
 #PBS -l mem=16gb
-#PBS -o /gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/fastqc.out
-#PBS -e /gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/fastqc.err
+#PBS -o /gpfs/data/mcnerney-lab/konecki/SNK015/comb/QC_output/fastqc.out
+#PBS -e /gpfs/data/mcnerney-lab/konecki/SNK015/comb/QC_output/fastqc.err
 
-date
 module load java-jdk/1.10.0_1
 module load fastqc/0.11.7
 
-s1=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/MMc-1_S1_L005_R1_001_merged.fastq.gz
-s2=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/MMc-2_S2_L005_R1_001_merged.fastq.gz
-s3=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/MMc-3_S3_L005_R1_001.fastq_merged.gz
-s4=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/MMc-4_S4_L005_R1_001_merged.fastq.gz
-s5=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/MMc-5_S5_L005_R1_001_merged.fastq.gz
-s6=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/MMc-6_S6_L005_R1_001_merged.fastq.gz
-s7=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/MMc-7_S7_L005_R1_001_merged.fastq.gz
-s8=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/MMc-8_S8_L005_R1_001_merged.fastq.gz
-s9=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/MMc-9_S9_L005_R1_001_merged.fastq.gz
-s10=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/MMc-10_S10_L005_R1_001_merged.fastq.gz
-s11=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/MMc-11_S11_L005_R1_001_merged.fastq.gz
-s12=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/MMc-12_S12_L005_R1_001_merged.fastq.gz
+out=/gpfs/data/mcnerney-lab/konecki/SNK015/comb/fastqc
+log=log_qc.log
 
+cd /gpfs/data/mcnerney-lab/konecki/SNK015/comb
 
+for i in $(ls *fastq.gz)
+do
+echo $i
+fastqc -t 8 -o $out $i 2>$log
+done
 
-
-out=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/fastqc
-log=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/fastqc/fastqc.log
-
-fastqc -t 8 -o $out $s1 $s2 $s3 $s4 $s5 $s6 $s7 $s8 $s9 $s10 $s11 $s12 2> $log
-
-date
 echo END
