@@ -21,36 +21,3 @@ fastqc -t 8 -o $out $i 2>$log
 done
 
 echo END
----------------------------------------------------------------------------------------------------------------------------
-#PBS -S /bin/bash
-
-#PBS -l walltime=8:00:00
-#PBS -l nodes=1:ppn=4
-#PBS -l mem=16gb
-#PBS -o /gpfs/data/mcnerney-lab/konecki/SNK015/fastqc.out
-#PBS -e /gpfs/data/mcnerney-lab/konecki/SNK015/fastqc.err
-
-module load java-jdk/1.8.0_92
-module load fastqc/0.11.5
-
-echo "start "
-x=1
-out=/gpfs/data/mcnerney-lab/konecki/SNK015/fastqc
-log=log_qc.log
-
-
-#cycles through all the files in my folder, running fastqc on them
-
-for f in *.gz;
-	do
-		echo "processing "$f
-		echo $x
-
-		fastqc -t 8 -o $out $f 2> $log
-
-
-		x=$((x+1))
-
-	done
-
-echo END
