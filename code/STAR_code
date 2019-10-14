@@ -28,7 +28,7 @@ STAR --runThreadN 8 \
 --genomeDir /gpfs/data/mcnerney-lab/liuweihan/bulk_refgenomes/mm10_refgenome \
 --readFilesIn $i \
 --readFilesCommand zcat \
---outFileNamePrefix $sample_prefix \
+--outFileNamePrefix $sample_prefix 
 
 done
 
