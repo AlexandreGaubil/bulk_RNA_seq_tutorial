@@ -49,8 +49,8 @@ raw_count_test <- raw_count
 raw_count_test <- raw_count_test %>% rownames_to_column(var = "gene")
 #arrange by gene name, 
 raw_count_test <- raw_count_test %>% arrange(gene)
-#get rid of all the Rik genes
-raw_count_test <- raw_count_test[-c(1:1706),]
+#get rid of all the Rik genes, these are unassigned mouse genes 
+raw_count_test <- raw_count_test[-endsWith(‘Rik’),]
 #assign the edited table back to raw_count
 raw_count <- raw_count_test
 raw_count <- remove_rownames(raw_count)
