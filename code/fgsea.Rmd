@@ -47,11 +47,11 @@ library(fgsea)
 ```
 
 
-Read in the result table from DeSeq2
+#Read in the result table from DeSeq2
 ```{r}
 library(tidyverse)
-res_RII <- read.csv("/Users/weihan/Desktop/Research/Bulk_RNA_seq/SNK015_SK_WL/Deseq2_output/RII_DE_result.csv")
-res_MEP <- read.csv("/Users/weihan/Desktop/Research/Bulk_RNA_seq/SNK015_SK_WL/Deseq2_output/MEP_DE_result.csv")
+res_RII <- read.csv("/Users/weihan/Desktop/Research/Bulk_RNA_seq/SNK015_SK_WL/Deseq2_output/RII_DE_result.csv",stringsAsFactors = FALSE)
+res_MEP <- read.csv("/Users/weihan/Desktop/Research/Bulk_RNA_seq/SNK015_SK_WL/Deseq2_output/MEP_DE_result.csv", stringsAsFactors = FALSE)
 res_RII
 res_MEP
 colnames(res_RII) <- c("gene","baseMean","log2FoldChange","lfcSE","stat","pvalue","padj")
@@ -59,6 +59,33 @@ colnames(res_MEP) <- c("gene","baseMean","log2FoldChange","lfcSE","stat","pvalue
 head(res_RII)
 head(res_MEP)
 ```
+
+#Create Ranks
+
+Rank all genes based on their fold change for MEP
+```{r}
+#construct gene ranking table by their log2foldchange calue
+ranks_MEP <- res_MEP$log2FoldChange
+names(ranks_MEP) <- res_MEP$gene
+head(ranks_MEP)
+
+#plot the rank fold change
+barplot(sort(ranks_MEP,decreasing = T),,axisnames = FALSE)
+```
+
+Rank all genes based on their fold change for RII
+```{r}
+#construct gene ranking table by their log2foldchange calue
+ranks_RII <- res_RII$log2FoldChange
+names(ranks_RII) <- res_RII$gene
+head(ranks_RII)
+
+#plot the rank fold change
+barplot(sort(ranks_RII,decreasing = T),,axisnames = FALSE)
+```
+
+
+
 
 
 All you’ll care about later on is the gene symbol and the test statistic. Get just those, and remove the NAs.
@@ -89,6 +116,8 @@ head(res_RII2)
 
 ```
 
+
+
 Do it for MEP
 ```{r}
 res_MEP2 <- res_MEP %>% 
@@ -110,7 +139,7 @@ res_MEP2 <- res_MEP2[,c(1,2)]
 
 res_MEP2 <- na.omit(res_MEP2,human_gene) 
 colnames(res_MEP2) <- c("gene","stat")
-res_MEP2 <- res_MEP2 %>% arrange(desc(stat))
+res_MEP2 <- res_MEP2 %>% dplyr::arrange(desc(stat))
 head(res_MEP2) 
 
 
@@ -124,7 +153,6 @@ head(res_MEP2)
 We’re going to use the fgsea package for fast preranked gene set enrichment analysis (GSEA).
 The fgsea() function requires a list of gene sets to check, and a named vector of gene-level statistics, where the names should be the same as the gene names in the pathways list. First, let’s create our named vector of test statistics. See  ?tibble::deframe for help here - deframe() converts two-column data frames to a named vector or list, using the first column as name and the second column as value.
 ```{r}
-library(fgsea)
 ranks_RII <- deframe(res_RII2)
 ranks_MEP <- deframe(res_MEP2)
 head(ranks_RII, 20)
@@ -153,12 +181,12 @@ fgseaRes_RII <- fgsea(pathways=pathways.hallmark, stats=ranks_RII, nperm=1000)
 #Tidy the results:
 fgseaResTidy_RII <- fgseaRes_RII %>%
   as_tibble() %>%
-  arrange(desc(NES))
+  dplyr::arrange(desc(NES))
 
 # Show in a nice table:
 fgseaResTidy_RII %>% 
   dplyr::select(-leadingEdge, -ES, -nMoreExtreme) %>% 
-  arrange(padj) %>% 
+  dplyr::arrange(padj) %>% 
   DT::datatable()
 
 ```
@@ -171,19 +199,33 @@ fgseaRes_MEP <- fgsea(pathways=pathways.hallmark, stats=ranks_MEP, nperm=1000)
 #Tidy the results:
 fgseaResTidy_MEP <- fgseaRes_MEP %>%
   as_tibble() %>%
-  arrange(desc(NES))
+  dplyr::arrange(desc(NES))
 
 # Show in a nice table:
 fgseaResTidy_MEP %>% 
   dplyr::select(-leadingEdge, -ES, -nMoreExtreme) %>% 
-  arrange(padj) %>% 
+  dplyr::arrange(padj) %>% 
   DT::datatable()
 
 ```
 
+
+Enrichment Score plot
+MEP
+```{r}
+#plot the enrichment score for all pathways of interest
+plotEnrichment(pathways.hallmark[["HALLMARK_APICAL_JUNCTION"]], ranks_MEP)
+```
+
+
+
+
+
+
+
 For RII, Plot the normalized enrichment scores. Color the bar indicating whether or not the pathway was significant:
 ```{r}
-ggplot(fgseaResTidy, aes(reorder(pathway, NES), NES)) +
+ggplot(fgseaResTidy_RII, aes(reorder(pathway, NES), NES)) +
   geom_col(aes(fill=padj<0.1)) +
   coord_flip() +
   labs(x="Pathway", y="Normalized Enrichment Score",
