@@ -17,6 +17,15 @@ BiocManager::install("fgsea")
 ```
 
 
+Load required libraries
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(fgsea)
+
+```
+
+
 ```{r}
 # musGenes <- c("Hmmr", "Tlx3", "Cpeb4")
 #  
@@ -41,8 +50,8 @@ BiocManager::install("fgsea")
 Read in the result table from DeSeq2
 ```{r}
 library(tidyverse)
-res_RII <- read_csv("/Users/weihan/Desktop/Research/Bulk_RNA_seq/SNK015_SK_WL/Deseq2_output/RII_DE_result.csv")
-res_MEP <- read_csv("/Users/weihan/Desktop/Research/Bulk_RNA_seq/SNK015_SK_WL/Deseq2_output/MEP_DE_result.csv")
+res_RII <- read.csv("/Users/weihan/Desktop/Research/Bulk_RNA_seq/SNK015_SK_WL/Deseq2_output/RII_DE_result.csv")
+res_MEP <- read.csv("/Users/weihan/Desktop/Research/Bulk_RNA_seq/SNK015_SK_WL/Deseq2_output/MEP_DE_result.csv")
 res_RII
 res_MEP
 colnames(res_RII) <- c("gene","baseMean","log2FoldChange","lfcSE","stat","pvalue","padj")
@@ -74,7 +83,7 @@ res_RII2 <- res_RII2[,c(1,2)]
 
 res_RII2 <- na.omit(res_RII2,human_gene) 
 colnames(res_RII2) <- c("gene","stat")
-res_RII2 <- res_RII2 %>% arrange(desc(stat))
+res_RII2 <- res_RII2 %>% dplyr::arrange(desc(stat))
 head(res_RII2) 
 
 
