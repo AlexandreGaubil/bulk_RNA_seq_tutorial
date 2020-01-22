@@ -124,6 +124,7 @@ Create Deseq object for MEP and RII respectively
 
 dds_RII <- DESeqDataSetFromMatrix(countData = raw_count_RII,colData = meta_data_RII,design = ~ genotype + day_collection_RII)
 nrow(dds_RII)
+#remove the genes that have 0 counts across all samples
 dds_RII <- dds_RII[rowSums(counts(dds_RII)) > 1,]
 nrow(dds_RII)
 
