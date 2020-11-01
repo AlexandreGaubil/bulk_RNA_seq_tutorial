@@ -25,7 +25,7 @@ sample_prefix=`echo $i | awk -F "L005" '{print $1}'`
 echo $sample_prefix
 
 STAR --runThreadN 8 \
---genomeDir /gpfs/data/mcnerney-lab/liuweihan/bulk_refgenomes/mm10_refgenome \
+--genomeDir /gpfs/data/mcnerney-lab/liuweihan/CUX1_CASP_diff_ref_transcriptome_bulk/mm10_refgenome \
 --readFilesIn $i \
 --readFilesCommand zcat \
 --outFileNamePrefix $sample_prefix 
