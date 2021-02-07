@@ -27,6 +27,8 @@ log=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/fastqc/fastqc.log
 fastqc -t 8 -o $out $s1 $s2 $s3 $s4 $s5 $s6 $s7 $s8 $s9 $s10 $s11 $s12 2> $log
 ```
 
+** alternatively, you could implement fastqc locally in R using the fastqc package. Please see the file fastqc_in_R.Rmd for details
+
 ## 2.STAR 
 
 **first, make a customized reference genome for STAR aligner.This only needs to be done once for each genome. You can also find ready-to-use ref genomes on STAR websites. In this experiment we constructed a mm10 reference genome which can differentiate CUX1 vs Casp.**
