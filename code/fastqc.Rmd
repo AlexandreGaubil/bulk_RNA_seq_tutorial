@@ -1,0 +1,37 @@
+---
+title: "fastqc"
+author: "Weihan Liu"
+date: "15/10/2020"
+output: html_document
+---
+This script is for implemental fastqc in bacth in R
+You need to pre-install the fastqc software on your computer
+
+package vignette: http://www.sthda.com/english/wiki/fastqcr-an-r-package-facilitating-quality-controls-of-sequencing-data-for-large-numbers-of-samples
+
+Install the package
+```{r}
+library(fastqcr)
+```
+
+```{r}
+#sequencing lane 1
+fastqc(fq.dir = "/Volumes/FantomHD/Lev_Kaz_bulk_RNA/FC01", # FASTQ files directory
+       qc.dir = "/Users/weihan/Desktop/Research/Misc/Becker_Lab_RNA_seq/bulk_RNA/data/fastqc", # path to where you would like the output directory to be
+       threads = 4,
+       fastqc.path = "/Users/weihan/Documents/FastQC/fastqc") #path to the location where you installed the fastqc software
+#sequencing lane 2
+fastqc(fq.dir = "/Volumes/FantomHD/Lev_Kaz_bulk_RNA/FC02", # FASTQ files directory
+       qc.dir = "/Users/weihan/Desktop/Research/Misc/Becker_Lab_RNA_seq/bulk_RNA/data/fastqc", # Results direcory
+       threads = 4,
+       fastqc.path = "/Users/weihan/Documents/FastQC/fastqc")
+```
+
+
+Aggregate and report result in a table
+```{r}
+qc <- qc_aggregate("/Users/weihan/Desktop/Research/Misc/Becker_Lab_RNA_seq/bulk_RNA/data/fastqc")
+summary(qc)
+```
+
+
