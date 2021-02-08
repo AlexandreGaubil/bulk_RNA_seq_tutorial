@@ -57,6 +57,11 @@ STAR --runThreadN 8 \
 
 done
 ```
+
+## 2.1 RUN STAR for batch
+**We can run STAR in batch for many fastqs using a wrapper.**
+In the above files, use the combination of star_PE_wrapper and star_PE_exe. star_PE_exe contain the actual code to execute star for each pair of reads. star_PE_wrapper contain the code to loop through each pair of fastqs and send them for execution in star_PE_exe.  When execute in the cluster, all you need to do is to execute the star_PE_wrapper script using ./star_PE_wrapper.(the normal way how to execute a bash script) Note please do not use qsub to execute because qsub within the wrapper script is not recognized in this way.
+
 ## 3.SAMTools(optional for differential expression analysis)
 
 **read in samples**
