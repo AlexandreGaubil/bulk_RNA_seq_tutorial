@@ -13,6 +13,7 @@ This this the general description of the RNA seq workflow, using experiment SNK0
 * FastQC: initial quality control
 * STAR : read alignment to the genome
 * SAMTools: sorting, filtering and indexing bam/sam files after alignment
+* RSeQC: QC on the bam files to ensure RNA transcript quality
 * featureCounts: count number of transcripts and assign them to features(genes)
 * DeSeq2: differential expression analysis
 * GSEA/GO: pathway and gene ontology analysis, gene set enrichment analysis
