@@ -62,7 +62,9 @@ done
 **We can run STAR in batch for many fastqs using a wrapper.**
 In the above files, use the combination of star_PE_wrapper and star_PE_exe. star_PE_exe contain the actual code to execute star for each pair of reads. star_PE_wrapper contain the code to loop through each pair of fastqs and send them for execution in star_PE_exe.  When execute in the cluster, all you need to do is to execute the star_PE_wrapper script using ./star_PE_wrapper.(the normal way how to execute a bash script) Note please do not use qsub to execute because qsub within the wrapper script is not recognized in this way.
 
-## 3.SAMTools(optional for differential expression analysis)
+## 3.RSeQC: QC on RNA Transcript
+
+## 4.SAMTools(optional for differential expression analysis)
 
 **read in samples**
 file_path=/gpfs/data/mcnerney-lab/liuweihan/bulk_RNA/SNK015/merged/tophat_SNK015
@@ -83,7 +85,7 @@ samtools view -@ 8 -bh -q 30 $sample_srt_id.sorted.bam -o $sample_srt_id.sorted.
 done
 ```
 
-## 4.featureCounts
+## 5.featureCounts
 **this sequencing experiment is strand specific, so we specified -s 1 as the forward strand. If you don't know this information,run    unspecified strand(default, you don't need to put anything for -s) and run -s 1 , -s 2 respectively, if it's unstanded,you should see the    number of mapped genes to be 50% vs 50% for reverse and forward, if not, then it is stranded.**
 
 ```
@@ -96,9 +98,9 @@ featureCounts -a /gpfs/data/mcnerney-lab/liuweihan/cellranger_ref_genomes/mm10ge
 *.sam
 ```
 
-## 5.Differential Expression analysis using DeSeq2
+## 6.Differential Expression analysis using DeSeq2
 **see the two .Rmd file for details**
 
-## 6.GSEA/GO analysis
+## 7.GSEA/GO analysis
 **see the fgsea file for detail**
 
