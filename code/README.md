@@ -1,10 +1,10 @@
-# detailed steps of RNA seq
-This readme file contains all the code and comments to perform a complete bulk RNA seq up until featureCounts. For the steps after featureCounts, namely DeSeq2 and GO/GSEA analysis, please see the R markdown files in this folder. Note all of the steps below are written in shell scripts. Below are the main codes of each steps for educational purposes, see the script for each step for complete ready-to-run codes.
+# Detailed steps of RNA seq
+This `README` file contains all the code and comments to perform a complete bulk RNA seq up until `featureCounts`. For the steps after `featureCounts`, namely `DeSeq2` and GO/GSEA analysis, please see the R markdown files in this folder. Note all of the steps below are written in shell scripts. Below are the main codes of each steps for educational purposes, see the script for each step for complete ready-to-run codes.
 
-## 1.FastQC
+## 1. FastQC
 
 
-**specifies the path to input files:**
+**Specifies the path to input files:**
 ```
 s1=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/MMc-1_S1_L005_R1_001_merged.fastq.gz
 s2=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/MMc-2_S2_L005_R1_001_merged.fastq.gz
@@ -19,19 +19,19 @@ s10=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/MMc-10_S10_L005_R1_001_merge
 s11=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/MMc-11_S11_L005_R1_001_merged.fastq.gz
 s12=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/MMc-12_S12_L005_R1_001_merged.fastq.gz
 
-### specify the output directory and where you would like to put the log file, which logs all the steps of the job running, for debugging purposes.
+# Specify the output directory and where you would like to put the log file, which logs all the steps of the job running, for debugging purposes.
 out=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/fastqc
 log=/gpfs/data/mcnerney-lab/liuweihan/SNK015/merged/fastqc/fastqc.log
 
-### main command
+# Main command
 fastqc -t 8 -o $out $s1 $s2 $s3 $s4 $s5 $s6 $s7 $s8 $s9 $s10 $s11 $s12 2> $log
 ```
 
-**alternatively, you could implement fastqc locally in R using the fastqcr package. Please see the file fastqc_in_R.Rmd for details**
+**Alternatively, you could implement `fastqc` locally in R using the `fastqcr` package. Please see the file `fastqc_in_R.Rmd` for details.**
 
-## 2.STAR 
+## 2. STAR
 
-**first, make a customized reference genome for STAR aligner.This only needs to be done once for each genome. You can also find ready-to-use ref genomes on STAR websites. In this experiment we constructed a mm10 reference genome which can differentiate CUX1 vs Casp.**
+**First, make a customized reference genome for STAR aligner. This only needs to be done once for each genome. You can also find ready-to-use ref genomes on STAR websites. In this experiment we constructed a mm10 reference genome which can differentiate CUX1 from Casp.**
 ```
 STAR --runThreadN 8 \
 --runMode genomeGenerate \
@@ -39,7 +39,7 @@ STAR --runThreadN 8 \
 --genomeFastaFiles /gpfs/data/mcnerney-lab/mcnerney/reference/mm10/mm10genome.fa \
 --sjdbGTFfile /gpfs/data/mcnerney-lab/liuweihan/cell_ranger_ref_genomes/mm10genes_chrM.gtf
 ```
-**then, we run star to align the reads to our reference genome, note I wrote a for loop here to loop through all the fastq files and automate the process.**
+**Then, we run star to align the reads to our reference genome. Note that I wrote a for loop here to loop through all the `fastq` files and automate the process.**
 ```
 cd /gpfs/data/mcnerney-lab/liuweihan/bulk_RNA/SNK015/merged
 
@@ -58,22 +58,24 @@ STAR --runThreadN 8 \
 done
 ```
 
-## 2.1 RUN STAR for batch
+## 2.1 Run STAR for batch
 **We can run STAR in batch for many fastqs using a wrapper.**
-In the above files, use the combination of star_PE_wrapper and star_PE_exe. star_PE_exe contain the actual code to execute star for each pair of reads. star_PE_wrapper contain the code to loop through each pair of fastqs and send them for execution in star_PE_exe.  When execute in the cluster, all you need to do is to execute the star_PE_wrapper script using ./star_PE_wrapper.(the normal way how to execute a bash script) Note please do not use qsub to execute because qsub within the wrapper script is not recognized in this way.
+In the above files, use the combination of `star_PE_wrapper` and `star_PE_exe`. `star_PE_exe` contain the actual code to execute star for each pair of reads. `star_PE_wrapper` contain the code to loop through each pair of `fastq`s and send them for execution in `star_PE_exe`.  When execute in the cluster, all you need to do is to execute the `star_PE_wrapper` script using `./star_PE_wrapper` (the standard way of executing a bash script). Note: please do not use `qsub` to execute the script because `qsub` within the wrapper script is not recognized in this way.
 
-## 3.RSeQC: QC on RNA Transcript
+## 3. RSeQC: QC on RNA Transcript
 Median TIN score for all RNA Transcript and the Gene body coverage plot would be sufficient
 ![unnamed](https://user-images.githubusercontent.com/43444815/127355974-7534641c-9fd2-4c37-acb2-bb48f7549198.png)
 
 
-## 4.SAMTools(optional for differential expression analysis)
+## 4. SAMTools (optional for differential expression analysis)
 
-**read in samples**
+**Read in samples**
+```
 file_path=/gpfs/data/mcnerney-lab/liuweihan/bulk_RNA/SNK015/merged/tophat_SNK015
 samples=(output_s2 output_s3 output_s4 output_s5 output_s6 output_s7 output_s8 output_s9 output_s10 output_s11 output_s12)
+```
 
-**samtools sort and q30 filter.You don't need to do this if you just want to do differential expression analysis, because illumina sequencing platform already has pretty high accurate base calling and featureCount will sort the reads itself.This is more useful is you want to visualize your reads with IGV or do other downstream analysis**
+**`samtools` sort and q30 filter. You don't need to do this if you just want to do differential expression analysis, because illumina sequencing platform already has pretty high accurate base calling and `featureCount` will sort the reads itself. This is more useful is you want to visualize your reads with IGV or do other downstream analysis**
 ```
 for i in ${samples[@]}
 do
@@ -88,8 +90,8 @@ samtools view -@ 8 -bh -q 30 $sample_srt_id.sorted.bam -o $sample_srt_id.sorted.
 done
 ```
 
-## 5.featureCounts
-**this sequencing experiment is strand specific, so we specified -s 1 as the forward strand. If you don't know this information,run    unspecified strand(default, you don't need to put anything for -s) and run -s 1 , -s 2 respectively, if it's unstanded,you should see the    number of mapped genes to be 50% vs 50% for reverse and forward, if not, then it is stranded.**
+## 5. `featureCounts`
+**This sequencing experiment is strand specific, so we specified `-s 1` as the forward strand. If you don't know this information, run unspecified strand (default, you don't need to put anything for `-s`) and run `-s 1` , `-s 2` respectively, if it's unstranded, you should see the    number of mapped genes to be 50% vs 50% for reverse and forward, if not, then it is stranded.**
 
 ```
 cd /gpfs/data/mcnerney-lab/liuweihan/bulk_RNA/SNK015/merged/star
@@ -101,12 +103,11 @@ featureCounts -a /gpfs/data/mcnerney-lab/liuweihan/cellranger_ref_genomes/mm10ge
 *.sam
 ```
 
-## 6.Differential Expression analysis using DeSeq2
-**see the two .Rmd file for details**
+## 6. Differential Expression analysis using DeSeq2
+**See the two `.Rmd` file for details**
 Note on correcting for batch effect(see Shirley's Stat115 lecture videos for details)
 ![Screenshot 2021-07-28 at 12 03 12](https://user-images.githubusercontent.com/43444815/127365567-74f1d473-8162-4dcb-bea2-5565742db5b2.png)
 
 
-## 7.GSEA/GO analysis
-**see the fgsea file for detail**
-
+## 7. GSEA/GO analysis
+**See the `fgsea` file for detail**
