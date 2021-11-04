@@ -16,10 +16,8 @@ module load gcc/6.2.0
 for i in $(ls /gpfs/data/mcnerney-lab/liuweihan/bulk_RNA/angela/fastq/*fastq.gz)
 do
 echo $i
-otherfilename="${i/R1/R2}"  #replace the "R1" in the filename with "R2" 
+otherfilename="${i/R1/R2}"  #replace the "R1" in the filename with "R2"
 qsub -v R1=$i,R2=$otherfilename pe_star_exe.sh
 done
 date
 echo
-
-

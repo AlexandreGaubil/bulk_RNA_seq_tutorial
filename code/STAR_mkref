@@ -23,12 +23,3 @@ STAR --runThreadN 8 \
 
 date
 echo END
-
-
-
-
-
-
-
-
-

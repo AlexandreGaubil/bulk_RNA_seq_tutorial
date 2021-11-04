@@ -105,7 +105,7 @@ featureCounts -a /gpfs/data/mcnerney-lab/liuweihan/cellranger_ref_genomes/mm10ge
 
 ## 6. Differential Expression analysis using DeSeq2
 **See the two `.Rmd` file for details**
-Note on correcting for batch effect(see Shirley's Stat115 lecture videos for details)
+Note on correcting for batch effect (see Shirley's Stat115 lecture videos for details)
 ![Screenshot 2021-07-28 at 12 03 12](https://user-images.githubusercontent.com/43444815/127365567-74f1d473-8162-4dcb-bea2-5565742db5b2.png)
 
 
