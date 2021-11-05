@@ -63,7 +63,6 @@ for FILENAME in $(ls *.fastq.gz)
     # Replace the "R1" in the filename with "R2"
     OTHER_FILENAME="${i/R1/R2}"
     run_STAR $FILENAME $OTHER_FILENAME
-    # qsub -v R1=$i,R2=$otherfilename pe_star_exe.sh
 done
 
 date
