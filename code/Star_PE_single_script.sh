@@ -35,8 +35,6 @@ if [ -z "$OUTPUT" ]
 then
     echo "No output directory specified, please specify it using the -o flag"
     exit 1
-else
-    out=$OUTPUT
 fi
 
 if [ -z "$GENOME_DIR" ]
@@ -47,22 +45,32 @@ fi
 
 # Function to run STAR for the given R1 and R2 files (R1 is $1 and R2 is $2)
 run_STAR() {
+    $OUTPUT_FILE = ${stringZ%.fastq.gz}
+
     STAR --runThreadN 8 \
     --genomeDir $GENOME_DIR \
     --readFilesIn $1 $2 \
     --outFileNamePrefix $1 \
     --readFilesCommand zcat \
     --outSAMtype BAM SortedByCoordinate \
-
+    --outFileNamePrefix $OUTPUT
 }
 
 # Loop through the files with extension .fastq.gz in the current directory
-for FILENAME in $(ls *.fastq.gz)
+for FILENAME in $(ls *\.fastq\.gz)
     do
     echo $FILENAME
     # Replace the "R1" in the filename with "R2"
     OTHER_FILENAME="${i/R1/R2}"
     run_STAR $FILENAME $OTHER_FILENAME
+done
+
+# Remove `.fastq.gz` from all files
+for i in $(ls *fastq\.gz*\.bam)
+do
+    echo $i
+    echo ${i/fastq.gz}
+    mv -f $i ${i%fastq.gz}
 done
 
 date
