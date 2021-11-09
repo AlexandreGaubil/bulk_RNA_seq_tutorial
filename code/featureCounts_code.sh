@@ -27,15 +27,5 @@ featureCounts -a /gpfs/data/mcnerney-lab/liuweihan/cellranger_ref_genomes/mm10ge
 -o /gpfs/data/mcnerney-lab/liuweihan/bulk_RNA/SNK015/merged/featureCounts/forward_counts_raw.txt \
 *.sam
 
-
 date
 echo END
-
-
-
-
-
-
-
-
-
