@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-### qsub file.name to run from anywhere
+### ./filename.sh -i [] -o [] -g [] to run from anywhere
 
 #PBS -N PE_STAR_wrapper
 #PBS -S /bin/bash
 #PBS -l walltime=24:00:00
 #PBS -l nodes=1:ppn=8
 #PBS -l mem=32gb
-#PBS -o /gpfs/data/mcnerney-lab/liuweihan/bulk_RNA/angela/star/star_queue.out
-#PBS -e /gpfs/data/mcnerney-lab/liuweihan/bulk_RNA/angela/star/star_queue.err
+#PBS -o /gpfs/data/mcnerney-lab/liuweihan/bulk_RNA/Jeff_cd34_ery/star/star_queue.out
+#PBS -e /gpfs/data/mcnerney-lab/liuweihan/bulk_RNA/Jeff_cd34_ery/star/star_queue.err
 
 date
 module load gcc/6.2.0
@@ -16,8 +16,8 @@ module load STAR/2.6.1d
 while getopts o:i:g: flag
 do
     case "${flag}" in
-        i) INPUT=${OPTARG};;
-        o) OUTPUT=${OPTARG};;
+        i) INPUT=${OPTARG};;   #input directory which contains all of your fast files
+        o) OUTPUT=${OPTARG};;  #output directory which you want all result to go to
         g) GENOME_DIR=${OPTARG};;
     esac
 done
